@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate rocket;
 
-use std::io;
-
 use ironcalc::base::Model as IModel;
 use ironcalc::import::load_from_xlsx_bytes;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::{Client, Method};
 use rocket::fairing::AdHoc;
+use rocket::futures::TryFutureExt;
+use rocket::http::Status;
 use rocket::serde::Deserialize;
 use rocket::State;
 use roxmltree::Document;
@@ -20,10 +20,13 @@ struct Config {
 }
 
 #[get("/api/webdav/<file_id>")]
-async fn get_webdav(config: &State<Config>, file_id: i32) -> io::Result<Vec<u8>> {
-    let client = Client::new();
+async fn get_webdav(
+    config: &State<Config>,
+    client: &State<Client>,
+    file_id: i32,
+) -> Result<Vec<u8>, Status> {
     let username = &config.username;
-    let res = client
+    let search_response = client
         .request(
             Method::from_bytes(b"SEARCH").unwrap(),
             config.nextcloud_url.to_owned() + "/remote.php/dav/",
@@ -52,52 +55,66 @@ async fn get_webdav(config: &State<Config>, file_id: i32) -> io::Result<Vec<u8>>
             </d:searchrequest>"#
         ))
         .send()
+        .and_then(|r| r.text())
         .await
-        .unwrap();
+        .map_err(|err| {
+            rocket::error!("Error searching by file id: {err}");
+            Status::InternalServerError
+        })?;
 
-    let response_text = res.text().await.unwrap();
+    let search_results = Document::parse(search_response.as_str()).map_err(|err| {
+        rocket::error!("Error parsing search results: {err}");
+        Status::InternalServerError
+    })?;
 
-    let doc = Document::parse(response_text.as_str()).unwrap();
-
-    let path = doc
+    let xlsx_path = search_results
         .descendants()
         .find(|n| n.tag_name().name() == "href")
-        .unwrap()
-        .text()
-        .unwrap();
+        .and_then(|n| n.text())
+        .ok_or(Status::NotFound)?;
 
-    let displayname = doc
+    let xlsx_displayname = search_results
         .descendants()
         .find(|n| n.tag_name().name() == "displayname")
-        .unwrap()
-        .text()
-        .unwrap();
+        .and_then(|n| n.text())
+        .ok_or(Status::NotFound)?;
 
     let xlsx_bytes = client
-        .get(config.nextcloud_url.to_owned() + path)
+        .get(config.nextcloud_url.to_owned() + xlsx_path)
         .basic_auth(username, Some(&config.password))
         .send()
+        .and_then(|r| r.bytes())
         .await
-        .unwrap()
-        .bytes()
-        .await
-        .unwrap()
-        .to_vec();
+        .map_err(|err| {
+            rocket::error!("Error downloading XLSX file: {err}");
+            Status::InternalServerError
+        })?;
 
     let workbook = load_from_xlsx_bytes(
         &xlsx_bytes,
-        displayname.trim_end_matches(".xlsx"),
+        xlsx_displayname.trim_end_matches(".xlsx"),
         "en",
         "UTC",
-    );
-    let model = IModel::from_workbook(workbook.unwrap()).unwrap();
+    )
+    .map_err(|err| {
+        rocket::error!("Error loading IronCalc worksheet: {err}");
+        Status::InternalServerError
+    })?;
+
+    let model = IModel::from_workbook(workbook).map_err(|err| {
+        rocket::error!("Error loading IronCalc model: {err}");
+        Status::InternalServerError
+    })?;
 
     Ok(model.to_bytes())
 }
 
 #[launch]
 fn rocket() -> _ {
+    let client = Client::new();
+
     rocket::build()
         .mount("/", routes![get_webdav])
         .attach(AdHoc::config::<Config>())
+        .manage(client)
 }
