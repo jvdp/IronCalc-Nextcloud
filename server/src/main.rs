@@ -7,37 +7,43 @@ use ironcalc::base::Model as IModel;
 use ironcalc::import::load_from_xlsx_bytes;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::{Client, Method};
+use rocket::fairing::AdHoc;
+use rocket::serde::Deserialize;
+use rocket::State;
 use roxmltree::Document;
 
+#[derive(Deserialize)]
+struct Config {
+    nextcloud_url: String,
+    username: String,
+    password: String,
+}
+
 #[get("/api/webdav/<file_id>")]
-async fn get_webdav(file_id: &str) -> io::Result<Vec<u8>> {
+async fn get_webdav(config: &State<Config>, file_id: i32) -> io::Result<Vec<u8>> {
     let client = Client::new();
+    let username = &config.username;
     let res = client
         .request(
             Method::from_bytes(b"SEARCH").unwrap(),
-            "http://localhost:2180/remote.php/dav/",
+            config.nextcloud_url.to_owned() + "/remote.php/dav/",
         )
-        .basic_auth("admin", Some("admin"))
+        .basic_auth(username, Some(&config.password))
         .header(CONTENT_TYPE, "application/xml")
         .body(format!(
             r#"<?xml version="1.0" encoding="UTF-8"?>
             <d:searchrequest xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
                 <d:basicsearch>
-                    <d:select><d:prop>
-                            <d:displayname/>
-                        </d:prop>
-                    </d:select>
+                    <d:select><d:prop><d:displayname/></d:prop></d:select>
                     <d:from>
                         <d:scope>
-                            <d:href>/files/admin</d:href>
+                            <d:href>/files/{username}</d:href>
                             <d:depth>infinity</d:depth>
                         </d:scope>
                     </d:from>
                     <d:where>
                         <d:eq>
-                            <d:prop>
-                                <oc:fileid/>
-                            </d:prop>
+                            <d:prop><oc:fileid/></d:prop>
                             <d:literal>{file_id}</d:literal>
                         </d:eq>
                     </d:where>
@@ -68,8 +74,8 @@ async fn get_webdav(file_id: &str) -> io::Result<Vec<u8>> {
         .unwrap();
 
     let xlsx_bytes = client
-        .get(format!("http://localhost:2180{path}"))
-        .basic_auth("admin", Some("admin"))
+        .get(config.nextcloud_url.to_owned() + path)
+        .basic_auth(username, Some(&config.password))
         .send()
         .await
         .unwrap()
@@ -93,4 +99,5 @@ async fn get_webdav(file_id: &str) -> io::Result<Vec<u8>> {
 fn rocket() -> _ {
     rocket::build()
         .mount("/", routes![get_webdav])
+        .attach(AdHoc::config::<Config>())
 }

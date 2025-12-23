@@ -1,0 +1,4 @@
+[default]
+nextcloud_url = "http://localhost:2180"
+username = "admin"
+password = "admin"

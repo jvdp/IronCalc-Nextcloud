@@ -988,6 +988,7 @@ dependencies = [
  "reqwest",
  "rocket",
  "roxmltree 0.21.1",
+ "serde",
 ]
 
 [[package]]
