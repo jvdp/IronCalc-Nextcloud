@@ -6,10 +6,23 @@ import svgr from 'vite-plugin-svgr';
 export default defineConfig({
   plugins: [react(), svgr()],
   server: {
+    cors: {
+      origin: "http://localhost:2180"
+    },
+    origin: "http://localhost:5173",
     fs: {
       // Allow serving files from one level up to the project root
-      allow: ['../../../'],
+      allow: ['../..'],
+    }
+  },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      input: "src/main.tsx"
     },
+    modulePreload: {
+      polyfill: false
+    }
   },
   optimizeDeps: {
     exclude: ["@ironcalc/wasm"]

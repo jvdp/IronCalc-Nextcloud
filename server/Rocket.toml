@@ -2,3 +2,5 @@
 nextcloud_url = "http://localhost:2180"
 username = "admin"
 password = "admin"
+port = 2620
+app_secret = "12345"

@@ -1,9 +1,22 @@
-import "./App.css";
 import styled from "@emotion/styled";
 import { IronCalc, IronCalcIcon, init, Model } from "@ironcalc/workbook";
 import { useEffect, useState } from "react";
-import { get_webdav, } from "./components/rpc";
-import { createModelWithSafeTimezone } from "./components/storage";
+
+async function get_webdav(fileId: string): Promise<Uint8Array> {
+  return new Uint8Array(
+    await (await fetch(`/index.php/apps/app_api/proxy/ironcalc/api/webdav/${fileId}`)).arrayBuffer(),
+  );
+}
+
+function createModelWithSafeTimezone(name: string): Model {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return new Model(name, "en", tz);
+  } catch {
+    console.warn("Failed to get timezone, defaulting to UTC");
+    return new Model(name, "en", "UTC");
+  }
+}
 
 function App() {
   const [model, setModel] = useState<Model | null>(null);
@@ -56,7 +69,9 @@ function App() {
   // We could use context for model, but the problem is that it should initialized to null.
   // Passing the property down makes sure it is always defined.
   return (
-    <IronCalc model={model} />
+    <Container>
+      <IronCalc model={model} />
+    </Container>
   );
 }
 
@@ -66,8 +81,15 @@ const Loading = styled("div")`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: "Inter";
   font-size: 14px;
+`;
+
+const Container = styled.div`
+  position: absolute;
+  inset: 0px;
+  margin: 0px;
+  border: none;
+  background-color: white;
 `;
 
 export default App;

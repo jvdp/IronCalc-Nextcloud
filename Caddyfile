@@ -1,7 +1,5 @@
-:2080
-
-# rocket API
-reverse_proxy /api/* 127.0.0.1:8000
-
-# everything else is the frontend
-reverse_proxy localhost:5173
+:2180 {
+	log
+  header -Content-Security-Policy
+	reverse_proxy localhost:2100
+}
