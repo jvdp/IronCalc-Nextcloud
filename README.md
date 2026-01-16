@@ -20,29 +20,37 @@
       -e 'SQLITE_DATABASE=db.sqlite' \
       -e 'NEXTCLOUD_ADMIN_USER=admin' \
       -e 'NEXTCLOUD_ADMIN_PASSWORD=admin' \
-      -p 2180:80 \
+      -p 2100:80 \
       nextcloud:apache
    ```
 2. Upload a spreadsheet:
    ```
    curl -u admin:admin -T test/fixtures/mortgage_calculator.xlsx \
-      http://localhost:2180/remote.php/dav/files/admin/Documents/
+      http://localhost:2100/remote.php/dav/files/admin/Documents/
    ```
 3. Run the proxy: `caddy run`
 4. In the server folder run `cargo run`
 5. In the frontend folder run `npm install && npm run dev`
-6. Manually load the file (by id) in the frontend
-      1. Open Nextcload in your browser: http://localhost:2180/apps/files/files?dir=/Documents
-      2. Right-click the XLSX file, click 'Open details'
-      3. Read the (numeric) file id from the url, eg. 124 in `http://localhost:2180/apps/files/files/124?dir=/Documents&opendetails=true`.
-      4. Pass the file id as parameter to the frontend: `http://localhost:2080/?fileIds=124`
+6. Register the Rust server with the Nextcloud App API: `make register`
+7. Open Nextcload in your browser: http://localhost:2180/apps/files/files?dir=/Documents
+8. Right-click the XLSX file (or click the ellipses)
+9. Click "Open with IronCalc"
 
 
 # TODO
 
-Automated testing, proper error handling and messages, load integration from within Nextcloud, make it work as well as the markdown editor does, collaboration, package as Nextcloud App, ...
+- use `files_action_handler` request payload to replace Webdav search call 
+- configure Nextclouds Apache to strip CSP headers instead of using Caddy
+- automated testing
+- proper error handling and messages
+- collaboration
+- release build
+- package as Nextcloud App
+- ultimately: make it work as well as the markdown editor does.
 
 # License
+
+Includes a vendored package of the IronCalc Workbook component.
 
 Based on code from [the IronCalc webapp](https://github.com/ironcalc/IronCalc/tree/main/webapp) (in addition to depending on the IronCalc software libraries.)
 
