@@ -17,18 +17,18 @@
    ```
    docker run --name nextcloud-test \
       -v nextcloud-test:/var/www/html \
+      -v ./nextcloud-test-hooks:/docker-entrypoint-hooks.d \
       -e 'SQLITE_DATABASE=db.sqlite' \
       -e 'NEXTCLOUD_ADMIN_USER=admin' \
       -e 'NEXTCLOUD_ADMIN_PASSWORD=admin' \
-      -p 2100:80 \
+      -p 2180:80 \
       nextcloud:apache
    ```
 2. Upload a spreadsheet:
    ```
    curl -u admin:admin -T test/fixtures/mortgage_calculator.xlsx \
-      http://localhost:2100/remote.php/dav/files/admin/Documents/
+      http://localhost:2180/remote.php/dav/files/admin/Documents/
    ```
-3. Run the proxy: `caddy run`
 4. In the server folder run `cargo run`
 5. In the frontend folder run `npm install && npm run dev`
 6. Register the Rust server with the Nextcloud App API: `make register`
@@ -40,7 +40,6 @@
 # TODO
 
 - use `files_action_handler` request payload to replace Webdav search call 
-- configure Nextclouds Apache to strip CSP headers instead of using Caddy
 - automated testing
 - proper error handling and messages
 - collaboration
