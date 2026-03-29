@@ -32,7 +32,7 @@ export JSON_INFO
 lint:
 	cd server && cargo fmt -- --check
 	cd server && cargo clippy --all-targets --all-features -- -W clippy::unwrap_used -W clippy::expect_used -W clippy::panic -D warnings
-	cd webapp/app.ironcalc.com/frontend/ && npm install && npm run check
+	cd frontend && npm install && npm run check
 
 .PHONY: format
 format:

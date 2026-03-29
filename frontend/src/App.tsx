@@ -1,20 +1,64 @@
 import styled from "@emotion/styled";
 import { IronCalc, IronCalcIcon, init, Model } from "@ironcalc/workbook";
 import { useEffect, useState } from "react";
+import { model_load } from "./calls";
+import TitleBar from "./TitleBar";
 
-async function get_webdav(fileId: string): Promise<Uint8Array> {
-  return new Uint8Array(
-    await (await fetch(`/index.php/apps/app_api/proxy/ironcalc/api/webdav/${fileId}`)).arrayBuffer(),
-  );
+function getDefaultUILocale(): string {
+  const lang = navigator.language || navigator.languages[0] || "en-US";
+  if (lang.startsWith("es")) {
+    return "es-ES";
+  } else if (lang.startsWith("fr")) {
+    return "fr-FR";
+  } else if (lang.startsWith("de")) {
+    return "de-DE";
+  } else if (lang === "en-GB") {
+    return "en-GB";
+  } else if (lang.startsWith("it")) {
+    return "it-IT";
+  }
+
+  return "en-US";
+}
+
+// Converts long language codes to short ones used by the Model
+export function getShortLocaleCode(longCode: string): string {
+  switch (longCode) {
+    case "es-ES": {
+      return "es";
+    }
+    case "fr-FR": {
+      return "fr";
+    }
+    case "de-DE": {
+      return "de";
+    }
+    case "it-IT": {
+      return "it";
+    }
+    case "en-GB": {
+      return "en-GB";
+    }
+    default: {
+      return "en";
+    }
+  }
+}
+
+function getLanguageFromLocale(locale: string): string {
+  return locale.split("-")[0];
 }
 
 function createModelWithSafeTimezone(name: string): Model {
+  const locale = getDefaultUILocale();
+  const language = getLanguageFromLocale(locale);
+  const localeShort = getShortLocaleCode(locale);
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return new Model(name, "en", tz);
-  } catch {
-    console.warn("Failed to get timezone, defaulting to UTC");
-    return new Model(name, "en", "UTC");
+    return new Model(name, localeShort, tz, language);
+  } catch (e) {
+    console.warn("Failed to get timezone, defaulting to UTC", e);
+    return new Model(name, localeShort, "UTC", language);
   }
 }
 
@@ -32,12 +76,13 @@ function App() {
       if (fileId) {
         // Get a remote model
         try {
-          const model_bytes = await get_webdav(fileId);
-          const importedModel = Model.from_bytes(model_bytes);
+          const model_bytes = await model_load(fileId);
+          const language = getLanguageFromLocale(getDefaultUILocale());
+          const importedModel = Model.from_bytes(model_bytes, language);
           localStorage.removeItem("selected");
           setModel(importedModel);
         } catch (_e) {
-          console.log(_e)
+          console.log(_e);
           alert("Model not found, or failed to load");
         }
       } else {
@@ -66,16 +111,29 @@ function App() {
     );
   }
 
-  // We could use context for model, but the problem is that it should initialized to null.
-  // Passing the property down makes sure it is always defined.
   return (
-    <Container>
-      <IronCalc model={model} />
-    </Container>
+    <div
+      css={{
+        display: "flex",
+        flexDirection: "column",
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        position: "absolute",
+      }}
+    >
+      <TitleBar />
+      <div css={{ flex: "1", background: "blue", position: "relative" }}>
+        <Container>
+          <IronCalc model={model} />
+        </Container>
+      </div>
+    </div>
   );
 }
 
-const Loading = styled("div")`
+const Loading = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;

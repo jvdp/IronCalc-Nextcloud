@@ -1,9 +1,9 @@
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { CacheProvider } from '@emotion/react'
-import createCache from '@emotion/cache'
 import App from "./App.tsx";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 // biome-ignore lint: we know the 'root' element exists.
 const root = document.getElementById("root")!;
@@ -14,7 +14,7 @@ shadowContainer.appendChild(shadowRoot);
 const emotionCache = createCache({
   key: "ironcalc",
   container: shadowContainer,
-  prepend: true
+  prepend: true,
 });
 
 const theme = createTheme({

@@ -4,7 +4,7 @@ import svgr from 'vite-plugin-svgr';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr()],
+  plugins: [react({ jsxImportSource: "@emotion/react" }), svgr()],
   server: {
     cors: {
       origin: "http://localhost:2180"
