@@ -76,8 +76,11 @@ function App() {
       if (fileId) {
         // Get a remote model
         try {
-          const model_bytes = await model_load(fileId);
-          const language = getLanguageFromLocale(getDefaultUILocale());
+          const locale = getDefaultUILocale();
+          const language = getLanguageFromLocale(locale);
+          const tz =
+            Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+          const model_bytes = await model_load(fileId, language, tz);
           const importedModel = Model.from_bytes(model_bytes, language);
           localStorage.removeItem("selected");
           setModel(importedModel);
