@@ -22,7 +22,7 @@
       -e 'NEXTCLOUD_ADMIN_USER=admin' \
       -e 'NEXTCLOUD_ADMIN_PASSWORD=admin' \
       -p 2180:80 \
-      nextcloud:apache
+      nextcloud:32-apache
    ```
 2. Upload a spreadsheet:
    ```
@@ -39,7 +39,6 @@
 
 # TODO
 
-- use `files_action_handler` request payload to replace Webdav search call 
 - automated testing
 - proper error handling and messages
 - collaboration

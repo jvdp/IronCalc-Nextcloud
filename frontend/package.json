@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "check": "biome check ./src",
     "check-write": "biome check --write ./src"
   },
