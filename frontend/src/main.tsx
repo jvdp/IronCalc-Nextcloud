@@ -5,9 +5,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 
-// biome-ignore lint: we know the 'root' element exists.
-const root = document.getElementById("root")!;
-const shadowContainer = root.attachShadow({ mode: "open" });
+// biome-ignore lint: we know the 'content' element exists in Nextcloud.
+const content = document.getElementById("content")!;
+const shadowContainer = content.attachShadow({ mode: "open" });
 const shadowRoot = document.createElement("div");
 shadowContainer.appendChild(shadowRoot);
 

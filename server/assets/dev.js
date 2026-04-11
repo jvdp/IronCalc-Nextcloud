@@ -1,7 +1,4 @@
 (() => {
-  const container = document.getElementById("content");
-  document.getElementById("content").innerHTML = `<div id="root"></div>`;
-
   const scriptPreamble = document.createElement("script");
   scriptPreamble.setAttribute("type", "module");
   scriptPreamble.textContent = `
