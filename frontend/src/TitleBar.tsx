@@ -257,7 +257,7 @@ function NewFileTitleBar({
         <IconButton
           icon={Save}
           title="Save"
-          disabled={pending || editedName.trim().length == 0}
+          disabled={pending || editedName.trim().length === 0}
           onClick={handleSave}
         />
         <IconButton icon={X} title="Close" onClick={navigateToFolder} />
