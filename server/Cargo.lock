@@ -964,7 +964,7 @@ dependencies = [
  "chrono",
  "ironcalc_base",
  "itertools",
- "roxmltree 0.19.0",
+ "roxmltree",
  "serde",
  "serde_json",
  "thiserror",
@@ -990,14 +990,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ironcalc_server"
-version = "0.5.0"
+name = "ironcalc_nextcloud_server"
+version = "0.1.0"
 dependencies = [
  "base64",
  "ironcalc",
  "reqwest",
  "rocket",
- "roxmltree 0.21.1",
  "serde",
  "serde_json",
 ]
@@ -1717,15 +1716,6 @@ name = "roxmltree"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3cd14fd5e3b777a7422cca79358c57a8f6e3a703d9ac187448d0daf220c2407f"
-
-[[package]]
-name = "roxmltree"
-version = "0.21.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1964b10c76125c36f8afe190065a4bf9a87bf324842c05701330bba9f1cacbb"
-dependencies = [
- "memchr",
-]
 
 [[package]]
 name = "rustc-demangle"

@@ -2,3 +2,4 @@
 nextcloud_url = "http://localhost:2180"
 port = 2620
 max_file_size_mib = 50
+script_path = "assets/dev"

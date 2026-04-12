@@ -52,7 +52,6 @@ export function getTimezone(): string {
 // Nextcloud URL helpers
 
 export type Location = {
-  fileId: string;
   filePath: string;
   fileName: string;
   dir: string;
@@ -60,23 +59,23 @@ export type Location = {
 
 const APP_PATH_RE = /^(\/apps\/app_api\/embedded\/ironcalc\/ironcalc\/)(.+)/;
 
-export function getLocation(): Location | undefined {
-  const fileId = new URLSearchParams(window.location.search)
-    .get("fileIds")
-    ?.split(",")[0];
-  const match = window.location.pathname.match(APP_PATH_RE);
-  const filePath = match ? decodeURIComponent(match[2]) : undefined;
-  if (!fileId || !filePath) return undefined;
+export function locationFromPath(filePath: string): Location {
   return {
-    fileId,
     filePath,
     fileName: filePath.split("/").at(-1) ?? "",
     dir: filePath.substring(0, filePath.lastIndexOf("/")),
   };
 }
 
-export function buildFileUrl(path: string, fileId: number | string): string {
-  return `/apps/app_api/embedded/ironcalc/ironcalc/${path}?fileIds=${fileId}`;
+export function getLocation(): Location | undefined {
+  const match = window.location.pathname.match(APP_PATH_RE);
+  const filePath = match ? decodeURIComponent(match[2]) : undefined;
+  if (!filePath) return undefined;
+  return locationFromPath(filePath);
+}
+
+export function buildFileUrl(path: string): string {
+  return `/apps/app_api/embedded/ironcalc/ironcalc/${path}`;
 }
 
 export function downloadFile(filePath: string): void {

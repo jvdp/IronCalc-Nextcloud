@@ -8,11 +8,18 @@ use reqwest::Client;
 use rocket::fairing::AdHoc;
 use rocket::fs::FileServer;
 use rocket::http::Header;
+use rocket::serde::Deserialize;
 
-use context::Config;
 use routes::{
     enabled, files_action_handler, get_workbook, heartbeat, put_workbook, rename_workbook,
 };
+
+#[derive(Deserialize)]
+pub struct Config {
+    pub nextcloud_url: String,
+    pub max_file_size_mib: u64,
+    pub script_path: String,
+}
 
 #[launch]
 fn rocket() -> _ {

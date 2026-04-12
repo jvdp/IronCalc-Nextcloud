@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { buildFileUrl, getLocation, type Location } from "./utils";
+import {
+  buildFileUrl,
+  getLocation,
+  type Location,
+  locationFromPath,
+} from "./utils";
 
 type AsyncResult<T> = { ok: true; data: T } | { ok: false };
 
@@ -42,7 +47,7 @@ export function useAsync<T, Args extends unknown[]>(
 
 export function useLocationState(): {
   location: Location | undefined;
-  updateLocation: (newPath: string, newFileId: number | string) => void;
+  updateLocation: (newPath: string) => void;
 } {
   const [location, setLocation] = useState(getLocation);
 
@@ -52,13 +57,10 @@ export function useLocationState(): {
     return () => window.removeEventListener("popstate", sync);
   }, []);
 
-  const updateLocation = useCallback(
-    (newPath: string, newFileId: number | string) => {
-      history.pushState(null, "", buildFileUrl(newPath, newFileId));
-      setLocation(getLocation());
-    },
-    [],
-  );
+  const updateLocation = useCallback((newPath: string) => {
+    history.pushState(null, "", buildFileUrl(newPath));
+    setLocation(locationFromPath(newPath));
+  }, []);
 
   return { location, updateLocation };
 }

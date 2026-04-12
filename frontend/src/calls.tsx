@@ -2,16 +2,12 @@ export const PROXY_BASE = "/index.php/apps/app_api/proxy/ironcalc";
 const API_BASE = `${PROXY_BASE}/api/workbook`;
 
 export async function workbook_load(
-  fileId: string,
+  path: string,
   lang: string,
   tz: string,
-  path?: string,
 ): Promise<Uint8Array> {
-  const params = new URLSearchParams({ lang, tz });
-  if (path) {
-    params.set("path", path);
-  }
-  const resp = await fetch(`${API_BASE}/${fileId}?${params}`);
+  const params = new URLSearchParams({ path, lang, tz });
+  const resp = await fetch(`${API_BASE}?${params}`);
   if (!resp.ok) {
     throw new Error("Failed to load workbook");
   }
@@ -19,13 +15,11 @@ export async function workbook_load(
 }
 
 export async function workbook_rename(
-  fileId: string,
+  path: string,
   newName: string,
 ): Promise<void> {
-  const resp = await fetch(
-    `${API_BASE}/${fileId}/rename?name=${encodeURIComponent(newName)}`,
-    { method: "POST" },
-  );
+  const params = new URLSearchParams({ path, name: newName });
+  const resp = await fetch(`${API_BASE}/rename?${params}`, { method: "POST" });
   if (resp.status === 409) {
     throw new Error("A file with that name already exists");
   }
@@ -35,22 +29,16 @@ export async function workbook_rename(
 }
 
 export async function workbook_save(
-  fileId: string,
+  path: string,
   modelBytes: Uint8Array,
   lang: string,
-  path?: string,
-): Promise<number> {
-  const params = new URLSearchParams({ lang });
-  if (path) {
-    params.set("path", path);
-  }
-  const resp = await fetch(`${API_BASE}/${fileId}?${params}`, {
+): Promise<void> {
+  const params = new URLSearchParams({ path, lang });
+  const resp = await fetch(`${API_BASE}?${params}`, {
     method: "PUT",
     body: modelBytes.buffer as ArrayBuffer,
   });
   if (!resp.ok) {
     throw new Error("Save failed");
   }
-  const { fileId: newFileId } = await resp.json();
-  return newFileId;
 }

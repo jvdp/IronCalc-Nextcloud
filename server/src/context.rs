@@ -6,21 +6,14 @@ use rocket::Request;
 use rocket::futures::TryFutureExt;
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome};
-use rocket::serde::{Deserialize, Serialize};
-use roxmltree::Document;
+use rocket::serde::Serialize;
 use serde_json::json;
 
-#[derive(Deserialize)]
-pub struct Config {
-    pub nextcloud_url: String,
-    pub max_file_size_mib: u64,
-    pub script_path: String,
-}
+use crate::Config;
 
 pub struct ExAppContext<'r> {
     pub client: &'r Client,
     pub nextcloud_url: &'r str,
-    pub max_file_size_mib: u64,
     pub aa_version: &'r str,
     pub ex_app_id: &'r str,
     pub ex_app_version: &'r str,
@@ -62,19 +55,6 @@ pub struct FilesAction<'a> {
     pub mime: &'a str,
 }
 
-struct ResolvedFile {
-    path: String,
-    display_name: String,
-}
-
-fn xml_text(doc: &Document, tag: &str) -> Result<String, Status> {
-    doc.descendants()
-        .find(|n| n.tag_name().name() == tag)
-        .and_then(|n| n.text())
-        .map(str::to_owned)
-        .ok_or(Status::NotFound)
-}
-
 impl<'r> ExAppContext<'r> {
     fn request(&self, method: Method, endpoint: &str) -> RequestBuilder {
         rocket::debug!("-> {method} {endpoint}");
@@ -86,27 +66,14 @@ impl<'r> ExAppContext<'r> {
             .header("AUTHORIZATION-APP-API", self.authorization_app_api)
     }
 
-    async fn resolve_webdav_path(
-        &self,
-        file_id: i32,
-        path: Option<&str>,
-    ) -> Result<(String, String), Status> {
-        if let Some(p) = path {
-            let webdav_path = format!("/remote.php/dav/files/{}/{p}", self.user_id);
-            let filename = p.rsplit('/').next().unwrap_or(p).to_owned();
-            Ok((webdav_path, filename))
-        } else {
-            let file = self.resolve_file(file_id).await?;
-            Ok((file.path, file.display_name))
-        }
+    fn webdav_path(&self, path: &str) -> (String, String) {
+        let webdav_path = format!("/remote.php/dav/files/{}/{path}", self.user_id);
+        let filename = path.rsplit('/').next().unwrap_or(path).to_owned();
+        (webdav_path, filename)
     }
 
-    pub async fn download_file(
-        &self,
-        file_id: i32,
-        path: Option<&str>,
-    ) -> Result<(Vec<u8>, String), Status> {
-        let (webdav_path, filename) = self.resolve_webdav_path(file_id, path).await?;
+    pub async fn download_file(&self, path: &str) -> Result<(Vec<u8>, String), Status> {
+        let (webdav_path, filename) = self.webdav_path(path);
 
         let xlsx_bytes = self
             .request(Method::GET, &webdav_path)
@@ -121,13 +88,8 @@ impl<'r> ExAppContext<'r> {
         Ok((xlsx_bytes.to_vec(), filename))
     }
 
-    pub async fn upload_file(
-        &self,
-        file_id: i32,
-        path: Option<&str>,
-        xlsx_bytes: Vec<u8>,
-    ) -> Result<(), Status> {
-        let (webdav_path, _) = self.resolve_webdav_path(file_id, path).await?;
+    pub async fn upload_file(&self, path: &str, xlsx_bytes: Vec<u8>) -> Result<(), Status> {
+        let (webdav_path, _) = self.webdav_path(path);
 
         self.request(Method::PUT, &webdav_path)
             .header(
@@ -146,15 +108,9 @@ impl<'r> ExAppContext<'r> {
         Ok(())
     }
 
-    pub async fn lookup_file_id(&self, file_id: i32, path: Option<&str>) -> Result<i64, Status> {
-        let (webdav_path, _) = self.resolve_webdav_path(file_id, path).await?;
-        self.get_file_id(&webdav_path).await
-    }
-
-    pub async fn rename_file(&self, file_id: i32, new_name: &str) -> Result<(), Status> {
-        let file = self.resolve_file(file_id).await?;
-        let dir = file
-            .path
+    pub async fn rename_file(&self, path: &str, new_name: &str) -> Result<(), Status> {
+        let (webdav_path, _) = self.webdav_path(path);
+        let dir = webdav_path
             .rsplit_once('/')
             .map(|(d, _)| d)
             .ok_or(Status::InternalServerError)?;
@@ -163,7 +119,7 @@ impl<'r> ExAppContext<'r> {
         let resp = self
             .request(
                 Method::from_bytes(b"MOVE").map_err(|_| Status::InternalServerError)?,
-                &file.path,
+                &webdav_path,
             )
             .header("Destination", &destination)
             .header("Overwrite", "F")
@@ -246,91 +202,6 @@ impl<'r> ExAppContext<'r> {
         )
         .await
     }
-
-    async fn webdav_xml<T>(
-        &self,
-        method: &[u8],
-        path: &str,
-        body: impl Into<reqwest::Body>,
-        extract: impl FnOnce(&Document) -> Result<T, Status>,
-    ) -> Result<T, Status> {
-        let response = self
-            .request(
-                Method::from_bytes(method).map_err(|_| Status::InternalServerError)?,
-                path,
-            )
-            .header(CONTENT_TYPE, "application/xml")
-            .body(body)
-            .send()
-            .and_then(|r| r.text())
-            .await
-            .map_err(|err| {
-                rocket::error!("WebDAV {path}: {err}");
-                Status::InternalServerError
-            })?;
-
-        rocket::debug!("<- {response}");
-
-        let doc = Document::parse(&response).map_err(|err| {
-            rocket::error!("Error parsing WebDAV response: {err}");
-            Status::InternalServerError
-        })?;
-
-        extract(&doc)
-    }
-
-    async fn resolve_file(&self, file_id: i32) -> Result<ResolvedFile, Status> {
-        let user_id = &self.user_id;
-        self.webdav_xml(
-            b"SEARCH",
-            "/remote.php/dav/",
-            format!(
-                r#"<?xml version="1.0" encoding="UTF-8"?>
-                <d:searchrequest xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
-                    <d:basicsearch>
-                        <d:select><d:prop><d:displayname/></d:prop></d:select>
-                        <d:from>
-                            <d:scope>
-                                <d:href>/files/{user_id}</d:href>
-                                <d:depth>infinity</d:depth>
-                            </d:scope>
-                        </d:from>
-                        <d:where>
-                            <d:eq>
-                                <d:prop><oc:fileid/></d:prop>
-                                <d:literal>{file_id}</d:literal>
-                            </d:eq>
-                        </d:where>
-                        <d:orderby/>
-                    </d:basicsearch>
-                </d:searchrequest>"#
-            ),
-            |doc| {
-                let path = xml_text(doc, "href")?;
-                let display_name = xml_text(doc, "displayname")?;
-                Ok(ResolvedFile { path, display_name })
-            },
-        )
-        .await
-    }
-
-    async fn get_file_id(&self, webdav_path: &str) -> Result<i64, Status> {
-        self.webdav_xml(
-            b"PROPFIND",
-            webdav_path,
-            r#"<?xml version="1.0" encoding="UTF-8"?>
-            <d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
-                <d:prop><oc:fileid/></d:prop>
-            </d:propfind>"#,
-            |doc| {
-                xml_text(doc, "fileid")?.parse::<i64>().map_err(|err| {
-                    rocket::error!("Error parsing file id: {err}");
-                    Status::InternalServerError
-                })
-            },
-        )
-        .await
-    }
 }
 
 #[rocket::async_trait]
@@ -348,7 +219,6 @@ impl<'r> FromRequest<'r> for ExAppContext<'r> {
             Some(ExAppContext {
                 client: req.rocket().state::<Client>()?,
                 nextcloud_url: config.nextcloud_url.as_str(),
-                max_file_size_mib: config.max_file_size_mib,
                 aa_version: req.headers().get_one("aa-version")?,
                 ex_app_id: req.headers().get_one("ex-app-id")?,
                 ex_app_version: req.headers().get_one("ex-app-version")?,

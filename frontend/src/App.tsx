@@ -35,7 +35,7 @@ function App() {
     if (location) {
       const [, workbookBytes] = await Promise.all([
         wasmInit,
-        workbook_load(location.fileId, language, timezone, location.filePath),
+        workbook_load(location.filePath, language, timezone),
       ]);
       return Model.from_bytes(workbookBytes, language);
     }
@@ -73,30 +73,20 @@ function App() {
     const newPath = location?.dir
       ? `${location.dir}/${newFileName}`
       : newFileName;
-    const newFileId = await workbook_save(
-      "0",
-      model.toBytes(),
-      language,
-      newPath,
-    );
-    updateLocation(newPath, newFileId);
+    await workbook_save(newPath, model.toBytes(), language);
+    updateLocation(newPath);
   };
 
   const handleSave = async () => {
     if (!location) return;
-    await workbook_save(
-      location.fileId,
-      model.toBytes(),
-      language,
-      location.filePath,
-    );
+    await workbook_save(location.filePath, model.toBytes(), language);
   };
 
   const handleRename = async (newName: string) => {
     if (!location) return;
     const newPath = location.dir ? `${location.dir}/${newName}` : newName;
-    await workbook_rename(location.fileId, newName);
-    updateLocation(newPath, location.fileId);
+    await workbook_rename(location.filePath, newName);
+    updateLocation(newPath);
   };
 
   return (
