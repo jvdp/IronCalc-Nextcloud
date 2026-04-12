@@ -18,7 +18,12 @@ export default defineConfig({
   build: {
     manifest: true,
     rollupOptions: {
-      input: "src/main.tsx"
+      input: "src/main.tsx",
+      output: {
+        format: "iife",
+        entryFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name][extname]",
+      },
     },
     modulePreload: {
       polyfill: false

@@ -1,4 +1,5 @@
-const API_BASE = "/index.php/apps/app_api/proxy/ironcalc/api/workbook";
+export const PROXY_BASE = "/index.php/apps/app_api/proxy/ironcalc";
+const API_BASE = `${PROXY_BASE}/api/workbook`;
 
 export async function workbook_load(
   fileId: string,

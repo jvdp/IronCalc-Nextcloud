@@ -1,7 +1,12 @@
 import styled from "@emotion/styled";
 import { IronCalc, IronCalcIcon, init, Model } from "@ironcalc/workbook";
 import { useEffect } from "react";
-import { workbook_load, workbook_rename, workbook_save } from "./calls";
+import {
+  PROXY_BASE,
+  workbook_load,
+  workbook_rename,
+  workbook_save,
+} from "./calls";
 import { useAsync, useLocationState } from "./hooks";
 import TitleBar from "./TitleBar";
 import {
@@ -10,6 +15,10 @@ import {
   getShortLocaleCode,
   getTimezone,
 } from "./utils";
+
+const wasmUrl = import.meta.env.DEV
+  ? undefined
+  : `${PROXY_BASE}/assets/wasm_bg.wasm`;
 
 function App() {
   const locale = getDefaultUILocale();
@@ -22,7 +31,7 @@ function App() {
     data: model,
     error,
   } = useAsync(async (): Promise<Model> => {
-    const wasmInit = init();
+    const wasmInit = init(wasmUrl);
     if (location) {
       const [, workbookBytes] = await Promise.all([
         wasmInit,

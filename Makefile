@@ -1,12 +1,12 @@
-CONTAINER_NAME = nextcloud-test
-APP_ID := ironcalc
-APP_NAME := IronCalc
-APP_VERSION := 0.1.0
-APP_SECRET := 12345
-APP_PORT := 2620
-APP_HOST := host.docker.internal
-NEXTCLOUD_URL := http://localhost:2180
-DAEMON := install_$(APP_ID)
+CONTAINER_NAME ?= nextcloud-test
+APP_ID ?= ironcalc
+APP_NAME ?= IronCalc
+APP_VERSION ?= 0.1.0
+APP_SECRET ?= 12345
+APP_PORT ?= 2620
+APP_HOST ?= host.docker.internal
+NEXTCLOUD_URL ?= http://localhost:2180
+DAEMON ?= install_$(APP_ID)
 
 define JSON_INFO
 	{
@@ -41,6 +41,10 @@ format:
 .PHONY: clean
 clean:
 	cd server && cargo clean
+
+.PHONY: docker
+docker:
+	docker build -t ironcalc-nextcloud:latest .
 
 .PHONY: register
 register:

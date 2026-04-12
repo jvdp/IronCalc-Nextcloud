@@ -7,7 +7,7 @@ use rocket::serde::Deserialize;
 use rocket::serde::json::{Json, Value};
 use serde_json::json;
 
-use crate::context::{ExAppContext, FilesAction, Script, TopMenu};
+use crate::context::{Config, ExAppContext, FilesAction, Script, TopMenu};
 
 const NEW_FILE_ID: i32 = 0;
 
@@ -100,7 +100,11 @@ pub fn heartbeat() -> Value {
 }
 
 #[put("/enabled?<enabled>")]
-pub async fn enabled(ctx: ExAppContext<'_>, enabled: i32) -> Result<(), Status> {
+pub async fn enabled(
+    ctx: ExAppContext<'_>,
+    config: &rocket::State<Config>,
+    enabled: i32,
+) -> Result<(), Status> {
     let top_menu = TopMenu {
         name: "ironcalc",
         display_name: "IronCalc",
@@ -110,7 +114,7 @@ pub async fn enabled(ctx: ExAppContext<'_>, enabled: i32) -> Result<(), Status> 
     let script = Script {
         r#type: "top_menu",
         name: "ironcalc",
-        path: "assets/dev",
+        path: &config.script_path,
     };
     let files_action = FilesAction {
         name: "ironcalc",

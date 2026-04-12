@@ -14,6 +14,7 @@ use serde_json::json;
 pub struct Config {
     pub nextcloud_url: String,
     pub max_file_size_mib: u64,
+    pub script_path: String,
 }
 
 pub struct ExAppContext<'r> {
