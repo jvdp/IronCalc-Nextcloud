@@ -1,5 +1,6 @@
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
+import workbookCss from "@ironcalc/workbook/style.css?inline";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
@@ -10,6 +11,10 @@ const content = document.getElementById("content")!;
 const shadowContainer = content.attachShadow({ mode: "open" });
 const shadowRoot = document.createElement("div");
 shadowContainer.appendChild(shadowRoot);
+
+const sheet = new CSSStyleSheet();
+sheet.replaceSync(workbookCss);
+shadowContainer.adoptedStyleSheets = [sheet];
 
 const emotionCache = createCache({
   key: "ironcalc",

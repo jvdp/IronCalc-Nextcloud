@@ -13,10 +13,8 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@ironcalc/wasm": "0.7.0",
-    "@ironcalc/workbook": "file:vendor/ironcalc-workbook-0.7.1.tgz",
+    "@ironcalc/workbook": "file:vendor/ironcalc-workbook-0.7.1-33a35d46.tgz",
     "i18next": "^25.7.4",
-    "@mui/material": "^7.3.9",
     "lucide-react": "^0.562.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
