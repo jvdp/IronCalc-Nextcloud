@@ -13,7 +13,7 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@ironcalc/workbook": "file:vendor/ironcalc-workbook-0.7.1-33a35d46.tgz",
+    "@ironcalc/workbook": "file:vendor/ironcalc-workbook-0.7.1-e40c4df5.tgz",
     "i18next": "^25.7.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.4",
