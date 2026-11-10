@@ -13,12 +13,13 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@ironcalc/workbook": "file:vendor/ironcalc-workbook-0.7.1-e40c4df5.tgz",
-    "i18next": "^25.7.4",
-    "lucide-react": "^0.562.0",
+    "@ironcalc/workbook": "^0.9.1",
+    "@mui/material": "^9.5.0",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.49.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-i18next": "^16.5.8"
+    "react-i18next": "^17.0.15"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.7",

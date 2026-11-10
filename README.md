@@ -22,7 +22,7 @@
       -e 'NEXTCLOUD_ADMIN_USER=admin' \
       -e 'NEXTCLOUD_ADMIN_PASSWORD=admin' \
       -p 2180:80 \
-      nextcloud:32-apache
+      nextcloud:latest
    ```
 2. Upload a spreadsheet:
    ```

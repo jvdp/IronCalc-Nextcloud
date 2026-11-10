@@ -46,7 +46,7 @@ createRoot(shadowRoot).render(
   <CacheProvider value={emotionCache}>
     <ThemeProvider theme={theme}>
       <StrictMode>
-        <App />
+        <App rootContainer={shadowRoot} />
       </StrictMode>
     </ThemeProvider>
   </CacheProvider>,

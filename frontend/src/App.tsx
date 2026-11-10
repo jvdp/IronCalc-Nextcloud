@@ -11,7 +11,7 @@ import {
   getTimezone,
 } from "./utils";
 
-function App() {
+function App({ rootContainer }: { rootContainer: HTMLElement }) {
   const locale = getDefaultUILocale();
   const language = getLanguageFromLocale(locale);
   const localeShort = getShortLocaleCode(locale);
@@ -28,7 +28,7 @@ function App() {
         wasmInit,
         workbook_load(location.filePath, language, timezone),
       ]);
-      return Model.from_bytes(workbookBytes, language);
+      return Model.fromBytes(workbookBytes, language);
     }
     await wasmInit;
     return new Model("untitled", localeShort, timezone, language);
@@ -89,7 +89,7 @@ function App() {
         location={location}
       />
       <WorkbookContainer>
-        <IronCalc model={model} />
+        <IronCalc model={model} rootContainer={rootContainer} />
       </WorkbookContainer>
     </AppContainer>
   );
